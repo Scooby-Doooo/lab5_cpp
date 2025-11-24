@@ -3,27 +3,23 @@
 #include <thread>
 #include <chrono>
 #include <future>
-#include <mutex>
-
-std::mutex cout_mutex;
+#include "utils.h" // Include the osyncstream definition if not in standard library
 
 void slow(const std::string& name) {
     std::this_thread::sleep_for(std::chrono::seconds(7));
-    std::lock_guard<std::mutex> lock(cout_mutex);
-    std::cout << name << std::endl;
+    std::osyncstream(std::cout) << name << std::endl;
 }
 
 void quick(const std::string& name) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::lock_guard<std::mutex> lock(cout_mutex);
-    std::cout << name << std::endl;
+    std::osyncstream(std::cout) << name << std::endl;
 }
 
 void work() {
     auto start = std::chrono::high_resolution_clock::now();
 
     std::promise<void> p_a2_done;
-    std::shared_future<void> f_a2_done = p_a2_done.get_future();
+    std::future<void> f_a2_done = p_a2_done.get_future();
 
     auto t2 = std::async(std::launch::async, [&p_a2_done]() {
         quick("A2");
@@ -51,8 +47,7 @@ void work() {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     
-    std::lock_guard<std::mutex> lock(cout_mutex);
-    std::cout << "Work is done! Time: " << elapsed.count() << " sec" << std::endl;
+    std::osyncstream(std::cout) << "Work is done! Time: " << elapsed.count() << " sec" << std::endl;
 }
 
 int main() {
